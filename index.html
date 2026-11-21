@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Vision Club - QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 20px;
+      color: #172554;
+    }
+    .container {
+      max-width: 480px;
+      margin: 30px auto;
+      background: white;
+      padding: 22px;
+      border-radius: 18px;
+      text-align: center;
+      box-shadow: 0 4px 18px #0001;
+    }
+    h2 { color: #1d4ed8; }
+    #reader { margin-top: 20px; }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border: 0;
+      border-radius: 9px;
+      background: #1d4ed8;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    #result {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #e0f2fe;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>نظام مسح التذاكر</h2>
+    <p>نادي الرؤية الجديدة - New Vision Club</p>
+
+    <div id="reader"></div>
+
+    <div id="result">اضغط على زر التشغيل لبدء مسح QR</div>
+
+    <button onclick="startScanner()">تشغيل الكاميرا</button>
+  </div>
+
+  <script>
+    let scanner = null;
+    let scanned = false;
+
+    function startScanner() {
+      if (scanner) return;
+
+      if (typeof Html5QrcodeScanner === "undefined") {
+        document.getElementById("result").textContent =
+          "تعذر تحميل قارئ QR. تحقق من الإنترنت.";
+        return;
+      }
+
+      scanner = new Html5QrcodeScanner("reader", {
+        fps: 10,
+        qrbox: { width: 230, height: 230 }
+      });
+
+      scanner.render((decodedText) => {
+        if (scanned) return;
+        scanned = true;
+
+        const match = decodedText.match(/[?&]ticket=([^&]+)/);
+        const ticketId = match
+          ? decodeURIComponent(match[1])
+          : decodedText.trim();
+
+        document.getElementById("result").textContent =
+          "تمت قراءة التذكرة:\n" + ticketId +
+          "\nجارٍ الانتقال إلى نظام الاستقبال...";
+
+        const destination =
+          "https://script.google.com/macros/s/AKfycbxVTnZaDUaGWwvnpal4ACe7TTr4sK2d7RazM0rv4s7DGBSNY6foNsNwiR4AQ3v80Li1/exec?page=checkin&ticket="
+          + encodeURIComponent(ticketId);
+
+        setTimeout(() => {
+          window.location.href = destination;
+        }, 1200);
+
+      }, () => {});
+    }
+  </script>
+</body>
+</html>
