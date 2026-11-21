@@ -4,100 +4,556 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>New Vision Club - QR Scanner</title>
+  <meta name="theme-color" content="#12366b">
+  <title>استقبال المشاركين | New Vision Club</title>
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+
   <style>
+    * { box-sizing: border-box; }
+
     body {
+      margin: 0;
+      padding: 18px;
       font-family: Arial, sans-serif;
       background: #f1f5f9;
-      margin: 0;
-      padding: 20px;
       color: #172554;
     }
+
     .container {
-      max-width: 480px;
-      margin: 30px auto;
-      background: white;
-      padding: 22px;
-      border-radius: 18px;
-      text-align: center;
-      box-shadow: 0 4px 18px #0001;
+      max-width: 560px;
+      margin: 15px auto;
     }
-    h2 { color: #1d4ed8; }
-    #reader { margin-top: 20px; }
+
+    .header {
+      background: linear-gradient(135deg,#12366b,#2563eb);
+      color: white;
+      text-align: center;
+      padding: 25px 15px;
+      border-radius: 18px;
+      margin-bottom: 16px;
+    }
+
+    .header h2 { margin: 0 0 8px; }
+    .header p { margin: 0; opacity: .9; }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 3px 12px #0000000c;
+    }
+
+    h3 {
+      margin-top: 0;
+      color: #1d4ed8;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      margin: 7px 0 12px;
+      font-size: 16px;
+      text-align: center;
+    }
+
     button {
       width: 100%;
-      padding: 14px;
-      margin-top: 15px;
-      border: 0;
+      padding: 13px;
+      border: none;
       border-radius: 9px;
       background: #1d4ed8;
       color: white;
       font-size: 16px;
       font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
     }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    button.secondary { background: #475569; }
+    button.success { background: #15803d; }
+    button.danger { background: #b91c1c; }
+
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+
     #result {
-      margin-top: 18px;
       padding: 14px;
+      background: #eff6ff;
       border-radius: 10px;
-      background: #e0f2fe;
+      margin-top: 12px;
+      line-height: 1.8;
       white-space: pre-line;
     }
+
+    .participant {
+      display: none;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 14px;
+    }
+
+    .participant p { margin: 9px 0; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .stat-card {
+      background: #eff6ff;
+      padding: 17px 8px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 27px;
+      color: #1d4ed8;
+      margin-bottom: 6px;
+    }
+
+    .stat-card span {
+      font-size: 13px;
+      color: #475569;
+    }
+
+    #statsMessage {
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+      padding: 10px;
+    }
+
+    .hidden { display: none !important; }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <h2>نظام مسح التذاكر</h2>
-    <p>نادي الرؤية الجديدة - New Vision Club</p>
+
+<div class="container">
+
+  <div class="header">
+    <h2>NEW VISION CLUB</h2>
+    <p>نظام استقبال المشاركين وتسجيل الحضور</p>
+  </div>
+
+  <div class="card">
+    <h3>1. مسح تذكرة المشارك</h3>
 
     <div id="reader"></div>
 
-    <div id="result">اضغط على زر التشغيل لبدء مسح QR</div>
+    <button id="startButton" onclick="startScanner()">
+      تشغيل الكاميرا
+    </button>
 
-    <button onclick="startScanner()">تشغيل الكاميرا</button>
+    <button id="stopButton" class="secondary hidden"
+      onclick="stopScanner()">
+      إيقاف الكاميرا
+    </button>
+
+    <div id="result">النظام جاهز لاستقبال التذاكر.</div>
   </div>
 
-  <script>
-    let scanner = null;
-    let scanned = false;
+  <div class="card">
+    <h3>2. التحقق من التذكرة</h3>
 
-    function startScanner() {
-      if (scanner) return;
+    <label for="ticket">رقم التذكرة</label>
+    <input id="ticket" type="text"
+      placeholder="NVC-XXXXXXXXXXXX">
 
-      if (typeof Html5QrcodeScanner === "undefined") {
-        document.getElementById("result").textContent =
-          "تعذر تحميل قارئ QR. تحقق من الإنترنت.";
-        return;
-      }
+    <label for="pin">رمز المنظم PIN</label>
+    <input id="pin" type="password"
+      inputmode="numeric" maxlength="6"
+      placeholder="أدخل رمز المنظم">
 
-      scanner = new Html5QrcodeScanner("reader", {
+    <button onclick="lookupParticipant()" id="verifyButton">
+      التحقق من التذكرة
+    </button>
+
+    <div class="participant" id="participant">
+      <p><strong>اسم المشارك:</strong>
+        <span id="participantName"></span>
+      </p>
+
+      <p><strong>رقم التذكرة:</strong>
+        <span id="participantTicket"></span>
+      </p>
+
+      <p><strong>حالة الحضور:</strong>
+        <span id="participantStatus"></span>
+      </p>
+
+      <button class="success" id="checkinButton"
+        onclick="confirmCheckin()">
+        تأكيد الحضور
+      </button>
+    </div>
+
+    <button class="secondary" onclick="resetTicket()">
+      مسح بيانات التذكرة والانتقال للتذكرة التالية
+    </button>
+  </div>
+
+  <div class="card">
+    <h3>3. إحصائيات الحضور المباشرة</h3>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <strong id="total">0</strong>
+        <span>إجمالي المسجلين</span>
+      </div>
+
+      <div class="stat-card">
+        <strong id="present">0</strong>
+        <span>الحاضرون</span>
+      </div>
+
+      <div class="stat-card">
+        <strong id="absent">0</strong>
+        <span>الغائبون</span>
+      </div>
+
+      <div class="stat-card">
+        <strong id="percentage">0%</strong>
+        <span>نسبة الحضور</span>
+      </div>
+    </div>
+
+    <button onclick="loadStats()" class="secondary">
+      تحديث الإحصائيات
+    </button>
+
+    <p id="statsMessage">بانتظار الاتصال...</p>
+  </div>
+
+  <div class="footer">
+    New Vision Club - University of Biskra
+  </div>
+
+</div>
+
+<!-- الاتصال الآمن مع Google Apps Script -->
+<iframe
+  id="bridge"
+  src="https://script.google.com/macros/s/AKfycbxVTnZaDUaGWwvnpal4ACe7TTr4sK2d7RazM0rv4s7DGBSNY6foNsNwiR4AQ3v80Li1/exec?page=bridge"
+  title="Secure connection"
+  style="width:1px;height:1px;position:absolute;left:-9999px;border:0">
+</iframe>
+
+<script>
+const BRIDGE_ORIGIN = "https://script.google.com";
+
+const bridge = document.getElementById("bridge");
+
+let bridgeReady = false;
+let requestCounter = 0;
+const pendingRequests = {};
+
+bridge.addEventListener("load", function() {
+  bridgeReady = true;
+  document.getElementById("statsMessage").textContent =
+    "تم الاتصال بالنظام.";
+
+  loadStats();
+});
+
+window.addEventListener("message", function(event) {
+  if (event.source !== bridge.contentWindow) return;
+
+  const data = event.data || {};
+  const pending = pendingRequests[data.requestId];
+
+  if (!pending) return;
+
+  clearTimeout(pending.timer);
+  delete pendingRequests[data.requestId];
+
+  pending.resolve(data.result);
+});
+
+function apiRequest(action, payload = {}) {
+  return new Promise((resolve, reject) => {
+    if (!bridgeReady) {
+      reject(new Error("الاتصال بالنظام غير جاهز. أعد المحاولة."));
+      return;
+    }
+
+    const requestId = "req_" + (++requestCounter);
+
+    const timer = setTimeout(() => {
+      delete pendingRequests[requestId];
+      reject(new Error("انتهت مهلة الاتصال. حاول مرة أخرى."));
+    }, 20000);
+
+    pendingRequests[requestId] = { resolve, timer };
+
+    bridge.contentWindow.postMessage({
+      requestId,
+      action,
+      ...payload
+    }, BRIDGE_ORIGIN);
+  });
+}
+
+// قراءة رقم التذكرة من QR
+function extractTicket(raw) {
+  try {
+    const url = new URL(raw);
+    const ticket = url.searchParams.get("ticket");
+    if (ticket) return ticket;
+  } catch (e) {}
+
+  const match = String(raw).match(/[?&]ticket=([^&]+)/);
+
+  if (match) {
+    try {
+      return decodeURIComponent(match[1]);
+    } catch (e) {
+      return match[1];
+    }
+  }
+
+  return String(raw).trim();
+}
+
+let scanner = null;
+let scanning = false;
+let currentParticipant = null;
+
+async function startScanner() {
+  if (scanning) return;
+
+  if (typeof Html5Qrcode === "undefined") {
+    showResult("تعذر تحميل قارئ QR. تحقق من الإنترنت.");
+    return;
+  }
+
+  try {
+    scanner = new Html5Qrcode("reader");
+
+    await scanner.start(
+      { facingMode: "environment" },
+      {
         fps: 10,
         qrbox: { width: 230, height: 230 }
-      });
+      },
+      async function(decodedText) {
+        if (!scanning) return;
 
-      scanner.render((decodedText) => {
-        if (scanned) return;
-        scanned = true;
+        const ticketId = extractTicket(decodedText);
 
-        const match = decodedText.match(/[?&]ticket=([^&]+)/);
-        const ticketId = match
-          ? decodeURIComponent(match[1])
-          : decodedText.trim();
+        document.getElementById("ticket").value = ticketId;
 
-        document.getElementById("result").textContent =
-          "تمت قراءة التذكرة:\n" + ticketId +
-          "\nجارٍ الانتقال إلى نظام الاستقبال...";
+        await stopScanner();
 
-        const destination =
-          "https://script.google.com/macros/s/AKfycbxVTnZaDUaGWwvnpal4ACe7TTr4sK2d7RazM0rv4s7DGBSNY6foNsNwiR4AQ3v80Li1/exec?page=checkin&ticket="
-          + encodeURIComponent(ticketId);
+        showResult(
+          "تمت قراءة التذكرة بنجاح.\nأدخل رمز المنظم ثم اضغط التحقق من التذكرة."
+        );
+      }
+    );
 
-        setTimeout(() => {
-          window.location.href = destination;
-        }, 1200);
+    scanning = true;
 
-      }, () => {});
+    document.getElementById("startButton").classList.add("hidden");
+    document.getElementById("stopButton").classList.remove("hidden");
+
+    showResult("الكاميرا تعمل. وجّهها نحو رمز QR.");
+
+  } catch (error) {
+    scanner = null;
+    scanning = false;
+
+    showResult(
+      "تعذر تشغيل الكاميرا: " + error.message +
+      "\nتحقق من صلاحية الكاميرا في المتصفح."
+    );
+  }
+}
+
+async function stopScanner() {
+  if (!scanner) return;
+
+  try {
+    if (scanning) await scanner.stop();
+    await scanner.clear();
+  } catch (error) {
+    console.log(error);
+  }
+
+  scanner = null;
+  scanning = false;
+
+  document.getElementById("startButton").classList.remove("hidden");
+  document.getElementById("stopButton").classList.add("hidden");
+}
+
+function showResult(message) {
+  document.getElementById("result").textContent = message;
+}
+
+async function lookupParticipant() {
+  const ticketId = document.getElementById("ticket").value.trim();
+  const pin = document.getElementById("pin").value.trim();
+
+  if (!ticketId || !pin) {
+    showResult("أدخل رقم التذكرة ورمز المنظم أولاً.");
+    return;
+  }
+
+  const button = document.getElementById("verifyButton");
+  button.disabled = true;
+  button.textContent = "جارٍ التحقق...";
+
+  try {
+    const result = await apiRequest("lookup", {
+      ticketId,
+      pin
+    });
+
+    if (!result.success) {
+      currentParticipant = null;
+      document.getElementById("participant").style.display = "none";
+      showResult(result.message);
+      return;
     }
-  </script>
+
+    currentParticipant = result;
+
+    document.getElementById("participantName").textContent =
+      result.name;
+
+    document.getElementById("participantTicket").textContent =
+      result.ticketId;
+
+    document.getElementById("participantStatus").textContent =
+      result.status === "حاضر" ? "حاضر مسبقاً" : "لم يسجل الحضور";
+
+    document.getElementById("participant").style.display = "block";
+
+    const checkinButton = document.getElementById("checkinButton");
+
+    if (result.status === "حاضر") {
+      checkinButton.disabled = true;
+      checkinButton.textContent = "تم تسجيل الحضور مسبقاً";
+    } else {
+      checkinButton.disabled = false;
+      checkinButton.textContent = "تأكيد الحضور";
+    }
+
+    showResult("تم التحقق من التذكرة بنجاح.");
+
+  } catch (error) {
+    showResult(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "التحقق من التذكرة";
+  }
+}
+
+async function confirmCheckin() {
+  if (!currentParticipant) return;
+
+  const pin = document.getElementById("pin").value.trim();
+  const button = document.getElementById("checkinButton");
+
+  button.disabled = true;
+  button.textContent = "جارٍ تسجيل الحضور...";
+
+  try {
+    const result = await apiRequest("checkin", {
+      ticketId: currentParticipant.ticketId,
+      pin
+    });
+
+    showResult(result.message);
+
+    if (result.success || result.alreadyCheckedIn) {
+      document.getElementById("participantStatus").textContent =
+        "حاضر";
+
+      button.textContent = "تم تسجيل الحضور";
+      button.disabled = true;
+
+      await loadStats();
+    } else {
+      button.disabled = false;
+      button.textContent = "تأكيد الحضور";
+    }
+
+  } catch (error) {
+    showResult(error.message);
+    button.disabled = false;
+    button.textContent = "تأكيد الحضور";
+  }
+}
+
+function resetTicket() {
+  document.getElementById("ticket").value = "";
+  document.getElementById("participant").style.display = "none";
+
+  currentParticipant = null;
+
+  showResult("جاهز لاستقبال التذكرة التالية.");
+
+  document.getElementById("ticket").focus();
+}
+
+async function loadStats() {
+  const message = document.getElementById("statsMessage");
+
+  try {
+    const data = await apiRequest("stats");
+
+    if (!data.success) {
+      throw new Error(data.message || "تعذر تحميل الإحصائيات.");
+    }
+
+    document.getElementById("total").textContent = data.total;
+    document.getElementById("present").textContent = data.present;
+    document.getElementById("absent").textContent = data.absent;
+    document.getElementById("percentage").textContent =
+      data.percentage + "%";
+
+    message.textContent =
+      "آخر تحديث: " + new Date().toLocaleTimeString("ar-DZ");
+
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+// تحديث الإحصائيات كل 15 ثانية
+setInterval(function() {
+  if (bridgeReady) loadStats();
+}, 15000);
+
+window.addEventListener("beforeunload", stopScanner);
+</script>
+
 </body>
 </html>
+
